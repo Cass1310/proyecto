@@ -70,5 +70,57 @@ class Service extends Model
     {
         return $this->belongsTo(User::class, 'updated_by');
     }
-    
+
+    // MÉTODOS DE AYUDA
+    public function getProgresoAttribute()
+    {
+        if ($this->tipo === 'identidad_corporativa') {
+            return $this->calcularProgresoIC();
+        } else {
+            return $this->calcularProgresoCM();
+        }
+    }
+
+    private function calcularProgresoIC()
+    {
+        $pasos = 0;
+        $totalPasos = 4;
+
+        // Paso 1: Brief completado
+        if ($this->brief) $pasos++;
+
+        // Paso 2: Logo en proceso
+        if ($this->logos()->whereIn('estado', ['enviado', 'en_revision', 'corregido'])->exists()) $pasos++;
+
+        // Paso 3: Logo entregado
+        if ($this->logos()->where('estado', 'entregado')->exists()) $pasos++;
+
+        // Paso 4: Manual entregado
+        if ($this->manuals()->exists()) $pasos++;
+
+        return ($pasos / $totalPasos) * 100;
+    }
+
+    private function calcularProgresoCM()
+    {
+        $pasos = 0;
+        $totalPasos = 5;
+
+        // Paso 1: Brief completado
+        if ($this->brief) $pasos++;
+
+        // Paso 2: Calendario creado
+        if ($this->publicationCalendars()->exists()) $pasos++;
+
+        // Paso 3: Calendario aprobado
+        if ($this->publicationCalendars()->where('estado', 'entregado')->exists()) $pasos++;
+
+        // Paso 4: Artes creados
+        if ($this->publicationCalendars()->has('artworks')->exists()) $pasos++;
+
+        // Paso 5: Reporte generado
+        if ($this->publicationCalendars()->has('reports')->exists()) $pasos++;
+
+        return ($pasos / $totalPasos) * 100;
+    }
 }

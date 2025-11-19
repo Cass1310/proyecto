@@ -126,17 +126,51 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return view('cliente.dashboard');
         })->name('cliente.dashboard');
         
-        Route::get('/mis-servicios', function () {
+        Route::get('/servicios', function () {
             return view('cliente.servicios.index');
         })->name('cliente.servicios');
+        
+        Route::get('/servicios/{servicio}', function (App\Models\Service $servicio) {
+            // Verificar que el servicio pertenece al cliente
+            if ($servicio->cliente_user_id !== auth()->id()) {
+                abort(403);
+            }
+            return view('cliente.servicios.show', compact('servicio'));
+        })->name('cliente.servicios.show');
         
         Route::get('/briefs', function () {
             return view('cliente.briefs.index');
         })->name('cliente.briefs');
         
+        Route::get('/briefs/crear/{servicio}', function (App\Models\Service $servicio) {
+            // Verificar que el servicio pertenece al cliente y no tiene brief
+            if ($servicio->cliente_user_id !== auth()->id() || $servicio->brief) {
+                abort(403);
+            }
+            return view('cliente.briefs.crear', compact('servicio'));
+        })->name('cliente.briefs.crear');
+        
         Route::get('/pagos', function () {
             return view('cliente.pagos.index');
         })->name('cliente.pagos');
+        
+        Route::get('/notificaciones', function () {
+            return view('cliente.notificaciones.index');
+        })->name('cliente.notificaciones');
+        // Rutas para notificaciones
+        Route::post('/notificaciones/{notificacion}/marcar-leida', function (App\Models\Notification $notificacion) {
+            // Verificar que la notificación pertenece al usuario
+            if ($notificacion->user_id !== auth()->id()) {
+                abort(403);
+            }
+            $notificacion->update(['is_read' => true]);
+            return back()->with('success', 'Notificación marcada como leída');
+        })->name('cliente.notificaciones.marcar-leida');
+
+        Route::post('/notificaciones/marcar-todas', function () {
+            auth()->user()->notifications()->update(['is_read' => true]);
+            return back()->with('success', 'Todas las notificaciones marcadas como leídas');
+        })->name('cliente.notificaciones.marcar-todas');
     });
 });
 

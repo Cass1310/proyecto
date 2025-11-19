@@ -123,4 +123,43 @@ class User extends Authenticatable
         
         return 'Sin rol definido';
     }
+    // RELACIONES ESPECÍFICAS DEL CLIENTE
+    public function serviciosComoCliente()
+    {
+        return $this->hasMany(Service::class, 'cliente_user_id');
+    }
+
+    public function briefsComoCliente()
+    {
+        return $this->hasMany(Brief::class, 'created_by');
+    }
+
+    public function pagosComoCliente()
+    {
+        return $this->hasMany(Payment::class, 'cliente_user_id');
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class, 'user_id');
+    }
+
+    // MÉTODO PARA OBTENER SERVICIOS ACTIVOS
+    public function serviciosActivos()
+    {
+        return $this->serviciosComoCliente()->where('estado', 'activo');
+    }
+
+    public function serviciosPendientesBrief()
+    {
+        return $this->serviciosComoCliente()
+            ->where('estado', 'activo')
+            ->whereDoesntHave('brief');
+    }
+
+    // MÉTODO PARA NOTIFICACIONES NO LEÍDAS
+    public function notificacionesNoLeidas()
+    {
+        return $this->notifications()->where('is_read', false);
+    }
 }
